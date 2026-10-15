@@ -1,0 +1,16 @@
+<button id="accessibility-button" class="accessibility-button" type="button" aria-haspopup="dialog" aria-controls="accessibility-panel" hidden>
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true" focusable="false"><circle cx="12" cy="4" r="2"/><path d="M4 9l8 2 8-2M12 11v5m0 0-4 6m4-6 4 6"/></svg>
+  <span>Accessibility</span>
+</button>
+<dialog id="accessibility-panel" class="accessibility-panel" aria-labelledby="accessibility-title" aria-describedby="accessibility-description">
+  <div class="accessibility-heading"><h2 id="accessibility-title">Accessibility options</h2><button id="accessibility-close" class="accessibility-close" type="button" aria-label="Close accessibility options" autofocus>×</button></div>
+  <p id="accessibility-description">Adjust how this website looks and moves. Your preferences are saved in this browser when available.</p>
+  <div class="accessibility-options">
+    <button type="button" data-accessibility="largeText" aria-pressed="false"><span>Larger text</span><span class="accessibility-state" aria-hidden="true">Off</span></button>
+    <button type="button" data-accessibility="highContrast" aria-pressed="false"><span>Higher contrast</span><span class="accessibility-state" aria-hidden="true">Off</span></button>
+    <button type="button" data-accessibility="reducedMotion" aria-pressed="false"><span>Reduce motion</span><span class="accessibility-state" aria-hidden="true">Off</span></button>
+    <button type="button" data-accessibility="underlineLinks" aria-pressed="false"><span>Underline links</span><span class="accessibility-state" aria-hidden="true">Off</span></button>
+  </div>
+  <button id="accessibility-reset" class="accessibility-reset" type="button">Reset preferences</button>
+  <p id="accessibility-status" class="sr-only" role="status"></p>
+</dialog>

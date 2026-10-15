@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><meta name="csrf-token" content="{{ csrf }}">
+  <title>{% block title %}Admin · People Person Foundation{% endblock %}</title>
+  <link rel="stylesheet" href="/static/css/styles.css"><link rel="stylesheet" href="/static/css/admin.css">
+  <script src="/static/js/admin.js" defer></script>
+  <link rel="stylesheet" href="/static/css/accessibility.css">
+  <script src="/static/js/accessibility.js" defer></script>
+</head>
+<body class="admin-body">
+<header class="admin-header"><a href="/" aria-label="Return to website"><img src="/static/images/logo.png" alt="People Person Foundation" width="125" height="67"></a><span>Website admin</span><a href="/" target="_blank" rel="noopener">View website ↗</a></header>
+<main class="admin-main">{% block content %}{% endblock %}</main>
+{% include "accessibility.html" %}
+</body>
+</html>

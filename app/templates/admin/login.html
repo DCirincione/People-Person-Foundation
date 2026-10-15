@@ -1,0 +1,6 @@
+{% extends "admin/base.html" %}
+{% block content %}
+<section class="admin-panel login-panel"><p class="eyebrow">People Person Foundation</p><h1>Welcome back.</h1><p>Sign in to manage your website.</p>
+<form id="admin-login"><div class="form-field"><label for="password">Admin password</label><input id="password" type="password" name="password" autocomplete="current-password" required maxlength="512" autofocus></div><button class="button" type="submit">Sign in <span aria-hidden="true">↗</span></button><p id="login-status" role="status"></p></form>
+</section>
+{% endblock %}

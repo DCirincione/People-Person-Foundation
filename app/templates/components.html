@@ -1,0 +1,15 @@
+{% macro brand() %}
+  {% if logo %}
+    <img class="brand-image" src="{{ url_for('static', path=logo) }}" alt="People Person Foundation" width="196" height="106">
+  {% else %}
+    <span class="brand-type">PEOPLE<br>PERSON<span>FOUNDATION</span></span>
+  {% endif %}
+{% endmacro %}
+{% macro action(kind, label, class_name='') %}
+  {% set destination = destinations[kind] %}
+  {% if destination %}
+    <a class="{{ class_name }}" href="{{ destination }}">{{ label }}</a>
+  {% else %}
+    <button class="{{ class_name }}" type="button" data-dialog="{{ kind }}">{{ label }}</button>
+  {% endif %}
+{% endmacro %}
