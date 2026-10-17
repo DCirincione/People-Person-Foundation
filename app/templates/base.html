@@ -24,6 +24,16 @@
     </nav>
   </div>
 </header>
+{% if active_page != "privacy" %}
+<aside class="privacy-notice" id="privacy-notice" aria-labelledby="privacy-notice-title" hidden>
+  <p class="eyebrow">People Person Foundation</p>
+  <h2 id="privacy-notice-title">Your privacy matters.</h2>
+  <p>We store your email when you subscribe, and the details you submit through our contact form, to send updates and respond to you.</p>
+  <p>We do not sell your personal information or share it for third-party marketing. Our service providers process information to help us run this site and send email.</p>
+  <p>Browser storage remembers accessibility choices and dismissal of this notice. Security cookies are used for admin sign-in. You can unsubscribe from emails anytime.</p>
+  <div class="privacy-actions"><button type="button" class="button button-small" id="privacy-dismiss">Got it</button><a href="/privacy">Privacy policy <span aria-hidden="true">↗</span></a></div>
+</aside>
+{% endif %}
     {% block content %}{% endblock %}
 <footer class="site-footer">
   <div class="container footer-inner">
@@ -56,16 +66,7 @@
 </dialog>
 {% endfor %}
 
-{% if active_page != "privacy" %}
-<aside class="privacy-notice" id="privacy-notice" aria-labelledby="privacy-notice-title" hidden>
-  <p class="eyebrow">People Person Foundation</p>
-  <h2 id="privacy-notice-title">Your privacy matters.</h2>
-  <p>We store your email when you subscribe, and the details you submit through our contact form, to send updates and respond to you.</p>
-  <p>We do not sell your personal information or share it for third-party marketing. Our service providers process information to help us run this site and send email.</p>
-  <p>Browser storage remembers accessibility choices and dismissal of this notice. Security cookies are used for admin sign-in. You can unsubscribe from emails anytime.</p>
-  <div class="privacy-actions"><button type="button" class="button button-small" id="privacy-dismiss">Got it</button><a href="/privacy">Privacy policy <span aria-hidden="true">↗</span></a></div>
-</aside>
-{% endif %}
+
   {% include "accessibility.html" %}
 </body>
 </html>

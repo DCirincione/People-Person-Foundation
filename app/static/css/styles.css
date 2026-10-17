@@ -43,4 +43,4 @@
 .privacy-page strong{color:var(--ink)}
 .privacy-page a{color:var(--ink);text-underline-offset:3px}
 .privacy-page .privacy-updated{font-size:.75rem;margin:16px 0 28px}
-@media(max-width:650px){.privacy-notice{left:14px;bottom:90px;width:calc(100vw - 28px);max-height:calc(100dvh - 110px);padding:20px}.privacy-page{padding-block:40px}}
+@media(max-width:650px){.privacy-notice{position:static;width:auto;max-height:none;overflow:visible;margin:20px 20px 0;padding:20px;box-shadow:none}.privacy-page{padding-block:40px}}
