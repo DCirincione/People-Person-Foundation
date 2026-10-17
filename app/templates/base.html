@@ -25,7 +25,22 @@
   </div>
 </header>
     {% block content %}{% endblock %}
-<footer class="site-footer container"><a class="brand" href="/" aria-label="People Person Foundation home">{{ brand() }}</a><p>People first. Always.</p><small>© {{ current_year }} People Person Foundation</small></footer>
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <a class="brand footer-brand" href="/" aria-label="People Person Foundation home">{{ brand() }}</a>
+    <div class="footer-info">
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="/">Home</a><a href="/#about">About</a><a href="/#team">Our team</a><a href="/contact">Contact</a>
+      </nav>
+      <small>People Person Foundation © {{ current_year }}</small>
+    </div>
+    <address class="footer-contact">
+      {% if phone_href %}<a href="{{ phone_href }}">{{ contact_phone }}</a>{% endif %}
+      <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>
+      {% if instagram_url %}<a class="footer-social" href="{{ instagram_url }}" target="_blank" rel="noopener noreferrer" aria-label="Instagram (opens in a new tab)">Instagram <span aria-hidden="true">↗</span></a>{% endif %}
+    </address>
+  </div>
+</footer>
 
 <dialog id="dialog-signup" aria-labelledby="signup-title">
   <form method="dialog"><button class="dialog-close" aria-label="Close dialog">×</button></form>

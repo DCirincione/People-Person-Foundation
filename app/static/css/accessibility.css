@@ -15,7 +15,7 @@
 .accessibility-options button[aria-pressed=true]{background:#171717;color:#fff;border-color:#171717}
 .accessibility-state{font-size:.75rem;font-weight:700}
 .accessibility-reset{min-height:44px;margin-top:16px;padding:10px 4px;border:0;background:none;color:#171717;font-size:.875rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
-.site-footer{padding-bottom:100px}
+.site-footer{padding-bottom:0}
 html.a11y-largeText{font-size:125%}
 .a11y-largeText .header-inner{flex-wrap:wrap;padding-block:16px}
 .a11y-largeText .header-inner nav{flex-wrap:wrap}

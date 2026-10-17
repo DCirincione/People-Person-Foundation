@@ -214,13 +214,20 @@ async function loadNewsletter() {
     const history = document.getElementById("newsletter-history");
     history.replaceChildren();
     for (const job of data.campaigns) {
-      const card = document.createElement("article"); card.className = "admin-panel";
-      const title = document.createElement("h3"); title.textContent = job.subject;
-      const progress = document.createElement("p"); progress.textContent = `${new Date(job.created_at).toLocaleString()} — ${campaignProgress(job)}`;
-      card.append(title, progress);
+      const card = document.createElement("details"); card.className = "message-card newsletter-card";
+      const summary = document.createElement("summary"); summary.className = "message-summary newsletter-summary";
+      const title = document.createElement("span"); title.className = "message-sender"; title.textContent = job.subject;
+      const delivery = document.createElement("span"); delivery.className = "message-preview";
+      delivery.textContent = `${job.sent} accepted${job.pending ? ` · ${job.pending} remaining` : ""}${job.failed || job.sending ? " · Needs attention" : ""}`;
+      const timestamp = document.createElement("time"); timestamp.dateTime = job.created_at; timestamp.textContent = new Date(job.created_at).toLocaleString();
+      summary.append(title, delivery, timestamp);
+      const details = document.createElement("div"); details.className = "message-details";
+      const progress = document.createElement("p"); progress.className = "message-body"; progress.textContent = campaignProgress(job);
+      details.append(progress);
+      card.append(summary, details);
       if (job.pending) {
         const button = document.createElement("button"); button.className = "secondary-button"; button.textContent = "Continue sending"; button.disabled = newsletterBusy;
-        button.addEventListener("click", () => sendNewsletter(job.id)); card.append(button);
+        button.addEventListener("click", () => sendNewsletter(job.id)); details.append(button);
       }
       history.append(card);
     }
