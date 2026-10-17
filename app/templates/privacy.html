@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Privacy policy · People Person Foundation{% endblock %}
+{% block content %}
+<main id="main" class="container privacy-page">
+  <p class="eyebrow">People Person Foundation</p>
+  <h1>Your privacy matters.</h1>
+  <p class="privacy-updated">Privacy policy · Updated October 16, 2026</p>
+  <p>We use the information you give us to stay in touch and respond to you. We do not sell your personal information or share it for third-party marketing.</p>
+
+  <h2>Information you provide</h2>
+  <ul>
+    <li><strong>Email list:</strong> your email address, signup date, subscription status, and records of newsletter sending. We use these to send foundation news, manage subscriptions, and track sending progress. Each newsletter includes an unsubscribe link.</li>
+    <li><strong>Contact form:</strong> your name, email address, optional phone number, message, submission date, and internal read and notification status. We use these to receive, review, and respond to your message. Contacting us does not sign you up for the email list.</li>
+  </ul>
+
+  <h2>Cookies and browser storage</h2>
+  <p>Cookies and local storage are information stored in your browser. We use them for the following purposes:</p>
+  <ul>
+    <li><strong>Accessibility preferences:</strong> local storage remembers settings you choose, such as larger text or higher contrast. Use Reset in the accessibility panel or clear your browser’s site data to remove them.</li>
+    <li><strong>Privacy notice:</strong> local storage remembers that you dismissed this version of the notice. This does not subscribe you to emails or give consent to marketing. Clearing your site data, using a different browser, or an updated notice can cause it to appear again.</li>
+    <li><strong>Admin security:</strong> the admin login uses a temporary security cookie lasting up to 15 minutes and a signed session cookie lasting up to eight hours. These cookies are scoped to the admin area; they are not needed to read the public website.</li>
+  </ul>
+  <p>Browser preferences and notice dismissal remain until you remove them or the site replaces them. You can manage cookies and site storage in your browser settings. Blocking storage may prevent preferences from being remembered and may prevent admin sign-in.</p>
+
+  <h2>Service providers and external links</h2>
+  <p>We use Supabase for hosted database storage, Gmail to send email, and Vercel for website hosting. These providers process information needed to deliver their services, which can include submitted information and technical information such as IP addresses and request or delivery logs. This service processing is different from selling your information or sharing it for third-party marketing.</p>
+  <p>Following our Instagram link takes you to Instagram, where its own privacy practices apply.</p>
+
+  <h2>Keeping and removing information</h2>
+  <p>Unsubscribing stops future newsletter sends; it does not automatically delete your subscriber record or previous sending records. Contact messages and newsletter records currently have no automatic deletion schedule.</p>
+  <p>To request access, correction, or deletion of information you provided, email <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. We may need to verify your request before making changes. Removing browser storage does not delete information already submitted to us.</p>
+
+  <h2>Questions and updates</h2>
+  <p>Contact the People Person Foundation at <a href="mailto:{{ contact_email }}">{{ contact_email }}</a> with privacy questions. We will update this page when our practices change and show the revision date above.</p>
+</main>
+{% endblock %}

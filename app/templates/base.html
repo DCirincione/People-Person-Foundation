@@ -6,7 +6,7 @@
     <meta name="description" content="Become a People Person. Get to know the People Person Foundation and the people behind it.">
     <meta name="theme-color" content="#df111b">
     <title>{% block title %}People Person Foundation · People first.{% endblock %}</title>
-    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}?v={{ styles_version }}">
     <script src="{{ url_for('static', path='/js/main.js') }}?v={{ main_script_version }}" defer></script>
     <link rel="stylesheet" href="/static/css/accessibility.css">
   <script src="/static/js/accessibility.js" defer></script>
@@ -32,7 +32,7 @@
       <nav class="footer-nav" aria-label="Footer navigation">
         <a href="/">Home</a><a href="/#about">About</a><a href="/#team">Our team</a><a href="/contact">Contact</a>
       </nav>
-      <small>People Person Foundation © {{ current_year }}</small>
+      <small>People Person Foundation © {{ current_year }} <span aria-hidden="true">·</span> <a href="/privacy">Privacy policy</a></small>
     </div>
     <address class="footer-contact">
       {% if phone_href %}<a href="{{ phone_href }}">{{ contact_phone }}</a>{% endif %}
@@ -45,7 +45,7 @@
 <dialog id="dialog-signup" aria-labelledby="signup-title">
   <form method="dialog"><button class="dialog-close" aria-label="Close dialog">×</button></form>
   <p class="eyebrow">People Person Foundation</p><h2 id="signup-title">Let’s stay connected.</h2>
-  <p>Sign up for news and updates from the foundation. Unsubscribe anytime.</p>
+  <p>Sign up for news and updates from the foundation. Unsubscribe anytime. <a href="/privacy">Privacy policy</a>.</p>
   <form id="newsletter-signup" method="post" action="/newsletter/subscribe"><div class="form-field"><label for="signup-email">Email address</label><input id="signup-email" name="email" type="email" autocomplete="email" required maxlength="254"></div><button class="button" type="submit">Join the email list ↗</button><p id="signup-status" role="status"></p></form>
 </dialog>
 {% for kind, title, description in [
@@ -56,6 +56,16 @@
 </dialog>
 {% endfor %}
 
+{% if active_page != "privacy" %}
+<aside class="privacy-notice" id="privacy-notice" aria-labelledby="privacy-notice-title" hidden>
+  <p class="eyebrow">People Person Foundation</p>
+  <h2 id="privacy-notice-title">Your privacy matters.</h2>
+  <p>We store your email when you subscribe, and the details you submit through our contact form, to send updates and respond to you.</p>
+  <p>We do not sell your personal information or share it for third-party marketing. Our service providers process information to help us run this site and send email.</p>
+  <p>Browser storage remembers accessibility choices and dismissal of this notice. Security cookies are used for admin sign-in. You can unsubscribe from emails anytime.</p>
+  <div class="privacy-actions"><button type="button" class="button button-small" id="privacy-dismiss">Got it</button><a href="/privacy">Privacy policy <span aria-hidden="true">↗</span></a></div>
+</aside>
+{% endif %}
   {% include "accessibility.html" %}
 </body>
 </html>

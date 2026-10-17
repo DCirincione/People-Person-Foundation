@@ -85,3 +85,18 @@ if (signupForm) signupForm.addEventListener("submit", async (event) => {
   } catch (error) { status.textContent = error instanceof TypeError ? "Could not save your signup. Please try again." : error.message; }
   finally { button.disabled = false; }
 });
+
+// An informational notice, separate from newsletter opt-in and cookie consent.
+(() => {
+  const notice = document.getElementById("privacy-notice");
+  if (!notice) return;
+  const key = "ppf-privacy-notice-v1";
+  try { if (localStorage.getItem(key) === "dismissed") return; }
+  catch { /* The notice still works when browser storage is unavailable. */ }
+  notice.hidden = false;
+  document.getElementById("privacy-dismiss").addEventListener("click", () => {
+    try { localStorage.setItem(key, "dismissed"); }
+    catch { /* Dismiss for this page even if the preference cannot be saved. */ }
+    notice.hidden = true;
+  });
+})();

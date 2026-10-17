@@ -37,6 +37,7 @@ def page_context(active_page: str):
         return None
 
     return {
+        "styles_version": sha256((BASE_DIR / "static/css/styles.css").read_bytes()).hexdigest()[:12],
         "main_script_version": sha256((BASE_DIR / "static/js/main.js").read_bytes()).hexdigest()[:12],
         "team": TEAM,
         "logo": image_path("logo"),
@@ -61,6 +62,11 @@ async def home(request: Request):
 async def contact(request: Request):
     return templates.TemplateResponse(request=request, name="contact.html", context=page_context("contact"))
 
+
+
+@app.get("/privacy", response_class=HTMLResponse, include_in_schema=False)
+async def privacy(request: Request):
+    return templates.TemplateResponse(request=request, name="privacy.html", context=page_context("privacy"))
 
 
 @app.get("/health", tags=["Health"])
