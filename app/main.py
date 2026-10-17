@@ -1,4 +1,5 @@
 from pathlib import Path
+from hashlib import sha256
 from datetime import datetime, timezone
 
 from app.content import TEAM, EMAIL_SIGNUP_URL, DONATE_URL, CONTACT_EMAIL, CONTACT_PHONE, INSTAGRAM_URL
@@ -21,6 +22,8 @@ load_dotenv(BASE_DIR.parent / ".env")
 app = FastAPI(title="People Person Foundation")
 app.include_router(contact_router)
 app.include_router(admin_router)
+from app.newsletter import router as newsletter_router
+app.include_router(newsletter_router)
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
 templates = Jinja2Templates(directory=BASE_DIR / "templates")
 
@@ -34,6 +37,7 @@ def page_context(active_page: str):
         return None
 
     return {
+        "main_script_version": sha256((BASE_DIR / "static/js/main.js").read_bytes()).hexdigest()[:12],
         "team": TEAM,
         "logo": image_path("logo"),
         "hero_image": image_path("community"),
@@ -43,7 +47,7 @@ def page_context(active_page: str):
         "contact_phone": CONTACT_PHONE,
         "phone_href": "tel:" + "".join(c for c in CONTACT_PHONE if c.isdigit() or c == "+") if CONTACT_PHONE else None,
         "instagram_url": INSTAGRAM_URL,
-        "destinations": {"signup": EMAIL_SIGNUP_URL, "donate": DONATE_URL, "contact": "/contact"},
+        "destinations": {"signup": None, "donate": DONATE_URL, "contact": "/contact"},
     }
 
 

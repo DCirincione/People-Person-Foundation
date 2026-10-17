@@ -111,3 +111,35 @@ class AdminTests(unittest.TestCase):
         content = self.client.get('/admin/api/content').json()
         content['hero_image'] = 'https://other.example/photo.jpg'
         self.assertEqual(self.client.put('/admin/api/content', headers=headers, json=content).status_code, 422)
+
+    def test_message_filters_apply_before_pagination(self):
+        headers = self.login()
+        for index in range(53):
+            identifier = storage.save_message({'name': f'Visitor {index}', 'email': 'visitor@example.com', 'phone': '', 'message': 'Hello'})
+            if index < 2:
+                storage.update_message(identifier, is_read=True)
+        all_mail = self.client.get('/admin/api/messages').json()
+        read = self.client.get('/admin/api/messages?is_read=true').json()
+        unread = self.client.get('/admin/api/messages?is_read=false').json()
+        next_page = self.client.get('/admin/api/messages?is_read=false&offset=50').json()
+        self.assertEqual(len(all_mail), 50)
+        self.assertEqual(len(read), 2)
+        self.assertTrue(all(row['is_read'] for row in read))
+        self.assertEqual(len(unread), 50)
+        self.assertEqual(len(next_page), 1)
+        self.assertTrue(all(not row['is_read'] for row in unread + next_page))
+        self.client.patch('/admin/api/messages/' + next_page[0]['id'], headers=headers, json={'is_read': True})
+        self.assertEqual(self.client.get('/admin/api/messages?is_read=false&offset=50').json(), [])
+        self.assertEqual(len(self.client.get('/admin/api/messages?is_read=true').json()), 3)
+        self.assertEqual(self.client.get('/admin/api/messages?is_read=invalid').status_code, 422)
+
+    def test_remote_message_filter(self):
+        with patch('app.storage.remote', return_value=('https://example.invalid', 'test')), patch('app.storage.api') as api:
+            api.return_value.json.return_value = []
+            storage.list_messages(50, False)
+            self.assertEqual(api.call_args.kwargs['params']['is_read'], 'eq.false')
+            self.assertEqual(api.call_args.kwargs['params']['offset'], 50)
+            storage.list_messages(0, True)
+            self.assertEqual(api.call_args.kwargs['params']['is_read'], 'eq.true')
+            storage.list_messages()
+            self.assertNotIn('is_read', api.call_args.kwargs['params'])

@@ -7,7 +7,7 @@
     <meta name="theme-color" content="#df111b">
     <title>{% block title %}People Person Foundation · People first.{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', path='/css/styles.css') }}">
-    <script src="{{ url_for('static', path='/js/main.js') }}" defer></script>
+    <script src="{{ url_for('static', path='/js/main.js') }}?v={{ main_script_version }}" defer></script>
     <link rel="stylesheet" href="/static/css/accessibility.css">
   <script src="/static/js/accessibility.js" defer></script>
 </head>
@@ -27,8 +27,13 @@
     {% block content %}{% endblock %}
 <footer class="site-footer container"><a class="brand" href="/" aria-label="People Person Foundation home">{{ brand() }}</a><p>People first. Always.</p><small>© {{ current_year }} People Person Foundation</small></footer>
 
+<dialog id="dialog-signup" aria-labelledby="signup-title">
+  <form method="dialog"><button class="dialog-close" aria-label="Close dialog">×</button></form>
+  <p class="eyebrow">People Person Foundation</p><h2 id="signup-title">Let’s stay connected.</h2>
+  <p>Sign up for news and updates from the foundation. Unsubscribe anytime.</p>
+  <form id="newsletter-signup" method="post" action="/newsletter/subscribe"><div class="form-field"><label for="signup-email">Email address</label><input id="signup-email" name="email" type="email" autocomplete="email" required maxlength="254"></div><button class="button" type="submit">Join the email list ↗</button><p id="signup-status" role="status"></p></form>
+</dialog>
 {% for kind, title, description in [
-  ('signup', 'Let’s stay connected.', 'Our email list is coming soon. Check back here for a way to sign up for updates.'),
   ('donate', 'Thank you for showing up.', 'Online donations are coming soon. Please check back for details on how to support the foundation.')
 ] %}
 <dialog id="dialog-{{ kind }}" aria-labelledby="dialog-title-{{ kind }}">

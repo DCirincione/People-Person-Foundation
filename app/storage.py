@@ -70,6 +70,8 @@ def db():
         connection.executescript('''
             CREATE TABLE IF NOT EXISTS site_content (id TEXT PRIMARY KEY, content TEXT NOT NULL, revision INTEGER NOT NULL);
             CREATE TABLE IF NOT EXISTS contact_messages (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT NOT NULL, message TEXT NOT NULL, is_read INTEGER NOT NULL DEFAULT 0, delivery TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS newsletter_subscribers (email TEXT PRIMARY KEY, token TEXT UNIQUE NOT NULL, active INTEGER NOT NULL, created_at TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS newsletters (id TEXT PRIMARY KEY, content TEXT NOT NULL, revision INTEGER NOT NULL, created_at TEXT NOT NULL);
             CREATE TABLE IF NOT EXISTS media (id TEXT PRIMARY KEY, data BLOB NOT NULL);
         ''')
         with connection:
@@ -126,11 +128,16 @@ def save_message(values):
     return row["id"]
 
 
-def list_messages(offset=0):
+def list_messages(offset=0, is_read=None):
     if remote()[0]:
-        return api("GET", "/rest/v1/contact_messages", params={"select": "*", "order": "created_at.desc,id.desc", "limit": 50, "offset": offset}).json()
+        params = {"select": "*", "order": "created_at.desc,id.desc", "limit": 50, "offset": offset}
+        if is_read is not None:
+            params["is_read"] = "eq.true" if is_read else "eq.false"
+        return api("GET", "/rest/v1/contact_messages", params=params).json()
     with db() as connection:
-        return [dict(row) for row in connection.execute("SELECT * FROM contact_messages ORDER BY created_at DESC,id DESC LIMIT 50 OFFSET ?", (offset,))]
+        condition = " WHERE is_read=?" if is_read is not None else ""
+        values = (is_read, offset) if is_read is not None else (offset,)
+        return [dict(row) for row in connection.execute("SELECT * FROM contact_messages" + condition + " ORDER BY created_at DESC,id DESC LIMIT 50 OFFSET ?", values)]
 
 
 def update_message(message_id, **changes):
@@ -158,3 +165,86 @@ def get_image(identifier):
     with db() as connection:
         row = connection.execute("SELECT data FROM media WHERE id=?", (identifier,)).fetchone()
         return row["data"] if row else None
+
+
+def subscribe(email):
+    import secrets
+    row = {'email': email, 'token': secrets.token_urlsafe(32), 'active': True,
+           'created_at': datetime.now(timezone.utc).isoformat()}
+    if remote()[0]:
+        api('POST', '/rest/v1/newsletter_subscribers', params={'on_conflict': 'email'},
+            headers={'Prefer': 'resolution=ignore-duplicates'}, json=row)
+        api('PATCH', '/rest/v1/newsletter_subscribers', params={'email': f'eq.{email}'}, json={'active': True})
+    else:
+        with db() as connection:
+            connection.execute('INSERT INTO newsletter_subscribers VALUES (:email,:token,:active,:created_at) ON CONFLICT(email) DO UPDATE SET active=1', row)
+
+
+def list_subscribers():
+    if remote()[0]:
+        rows = []
+        while True:
+            page = api('GET', '/rest/v1/newsletter_subscribers', params={'active': 'eq.true', 'order': 'email.asc', 'limit': 500, 'offset': len(rows)}).json()
+            rows.extend(page)
+            if len(page) < 500:
+                return rows
+    with db() as connection:
+        return [dict(r) for r in connection.execute('SELECT * FROM newsletter_subscribers WHERE active=1 ORDER BY email')]
+
+
+def subscriber_by_token(token):
+    if remote()[0]:
+        rows = api('GET', '/rest/v1/newsletter_subscribers', params={'token': f'eq.{token}', 'limit': 1}).json()
+        return rows[0] if rows else None
+    with db() as connection:
+        row = connection.execute('SELECT * FROM newsletter_subscribers WHERE token=?', (token,)).fetchone()
+        return dict(row) if row else None
+
+
+def unsubscribe(token):
+    if remote()[0]:
+        api('PATCH', '/rest/v1/newsletter_subscribers', params={'token': f'eq.{token}'}, json={'active': False})
+    else:
+        with db() as connection:
+            connection.execute('UPDATE newsletter_subscribers SET active=0 WHERE token=?', (token,))
+
+
+def get_newsletter(identifier):
+    if remote()[0]:
+        rows = api('GET', '/rest/v1/newsletters', params={'id': f'eq.{identifier}'}).json()
+        return rows[0]['content'] if rows else None
+    with db() as connection:
+        row = connection.execute('SELECT content FROM newsletters WHERE id=?', (identifier,)).fetchone()
+        return json.loads(row['content']) if row else None
+
+
+def list_newsletters():
+    if remote()[0]:
+        return [r['content'] for r in api('GET', '/rest/v1/newsletters', params={'order': 'created_at.desc', 'limit': 20}).json()]
+    with db() as connection:
+        return [json.loads(r['content']) for r in connection.execute('SELECT content FROM newsletters ORDER BY created_at DESC LIMIT 20')]
+
+
+def save_newsletter(job):
+    revision = job['revision']
+    updated = {**job, 'revision': revision + 1}
+    row = {'id': job['id'], 'content': updated, 'revision': revision + 1, 'created_at': job['created_at']}
+    if remote()[0]:
+        if revision == 0:
+            api('POST', '/rest/v1/newsletters', json=row)
+        else:
+            rows = api('PATCH', '/rest/v1/newsletters', params={'id': f'eq.{job["id"]}', 'revision': f'eq.{revision}'}, headers={'Prefer': 'return=representation'}, json=row).json()
+            if not rows:
+                raise ConflictError('Another send is running. Refresh to see progress.')
+    else:
+        with db() as connection:
+            if revision == 0:
+                try:
+                    connection.execute('INSERT INTO newsletters VALUES (?,?,?,?)', (job['id'], json.dumps(updated), revision + 1, job['created_at']))
+                except sqlite3.IntegrityError:
+                    raise ConflictError('This email has already been created.') from None
+            else:
+                cursor = connection.execute('UPDATE newsletters SET content=?,revision=? WHERE id=? AND revision=?', (json.dumps(updated), revision + 1, job['id'], revision))
+                if cursor.rowcount != 1:
+                    raise ConflictError('Another send is running. Refresh to see progress.')
+    job['revision'] = revision + 1

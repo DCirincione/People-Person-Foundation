@@ -192,10 +192,10 @@ def upload_image(file: UploadFile):
 
 
 @router.get("/admin/api/messages", dependencies=[Depends(require_admin)], include_in_schema=False)
-def messages(offset: int = 0):
+def messages(offset: int = 0, is_read: bool | None = None):
     if offset < 0:
         raise HTTPException(422, "Invalid page.")
-    return storage.list_messages(offset)
+    return storage.list_messages(offset, is_read)
 
 
 class MessageState(BaseModel):

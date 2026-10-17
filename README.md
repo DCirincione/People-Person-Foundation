@@ -38,7 +38,7 @@ Sessions expire after eight hours. Changing either admin secret invalidates all 
 Without Supabase settings, local development uses `data/site.sqlite3`, including uploaded photos. The directory is gitignored. **Vercel requires Supabase**; the app refuses to write temporary local data there.
 
 1. Create a Supabase project.
-2. Run `supabase/setup.sql` in its SQL Editor. This creates content and contact-message tables with RLS, and a private `site-images` bucket.
+2. Configure the content and contact-message tables with row-level security and a private `site-images` bucket in Supabase.
 3. Add `SUPABASE_URL` and `SUPABASE_SECRET_KEY` to `.env.local`. A legacy server `SUPABASE_SERVICE_ROLE_KEY` is also supported. Do not use the public/anon key or put a server key in frontend code.
 4. Restart the server. All new reads, saves, messages, and image uploads now use Supabase.
 
@@ -56,7 +56,7 @@ Set `GMAIL_SMTP_USER=peoplepersonfoundation@gmail.com` and `GMAIL_APP_PASSWORD` 
 
 ## Vercel
 
-Import the GitHub repository at the repository root, select the FastAPI framework preset, and use default build/output settings. Add all admin, Supabase, and Gmail environment variables from `.env.example`, then deploy. No Node build is required. `.env.local` and local SQLite data are not deployed.
+Import the GitHub repository at the repository root, select the FastAPI framework preset, and use default build/output settings. Configure the admin, Supabase, Gmail, and `PUBLIC_SITE_URL` environment variables described above and below, then deploy. No Node build is required. `.env.local` and local SQLite data are not deployed.
 
 [Official FastAPI deployment documentation](https://vercel.com/docs/frameworks/backend/fastapi).
 
@@ -69,10 +69,9 @@ Import the GitHub repository at the repository root, select the FastAPI framewor
 - `app/templates/`: public and admin templates
 - `app/static/`: CSS, JavaScript, and original logo/community image
 - `app/content.py`: contact details, signup/donation destinations, and initial team placeholders
-- `supabase/setup.sql`: database and private image bucket setup
 - `docs/reference/homepage-reference.png`: supplied layout reference
 
-The default About wording is draft copy. Edit it in admin. Signup and donation buttons remain “coming soon” until their URLs are set in `app/content.py`.
+The default About wording is draft copy. Edit it in admin. The email signup opens the built-in signup form. Donation buttons remain “coming soon” until their URL is set in `app/content.py`.
 
 ## Verification
 
@@ -83,3 +82,13 @@ node --check app/static/js/main.js
 ```
 
 Tests use temporary SQLite databases and mocked email connections. They cover authentication, CSRF, content persistence/conflicts, escaping, upload validation/resizing, contact-message storage, and notification failure handling. Real Supabase configuration and inbox delivery need an environment-specific check.
+
+## Email list and newsletters
+
+Visitors use **Join the email list** to save their email address. Addresses are normalized and deduplicated. In `/admin`, open **Email list** to see the active subscriber count, write a subject and plain-text message, and send to everyone subscribed at the time the campaign is created. Contact-form submissions do not subscribe visitors.
+
+Hosted storage requires the `newsletter_subscribers` and `newsletters` tables to be configured in Supabase with row-level security and server-only access. This setup is not performed automatically by the application. Local SQLite tables are created automatically. Set `GMAIL_SMTP_USER`, `GMAIL_APP_PASSWORD`, and `PUBLIC_SITE_URL` (the public HTTPS origin, without a trailing slash) in the deployment environment. Local development can use an `http://localhost:PORT` origin. Newsletter records and subscriber addresses are accessible only through authenticated admin APIs; the browser never receives SMTP credentials or unsubscribe tokens.
+
+Each email is individually addressed and includes an unsubscribe link. Opening the link shows a confirmation form; submitting removes the address from future sends. Already queued campaigns recheck subscription status before sending. Signing up again reactivates the address.
+
+Keep the admin page open while sending. The browser processes one recipient per request and records progress in the database. Use **Continue sending** after an interruption; completed recipients are not resent. Sending pauses on a mail-server error. Failed or unconfirmed recipients are not automatically retried because the server may already have accepted their message. “Accepted” means SMTP accepted the message, not confirmed inbox delivery. The dashboard shows the latest 20 campaigns. This uses the existing Gmail account and remains subject to its sending limits; it is not an unattended bulk-mail worker. No live emails are sent by tests.

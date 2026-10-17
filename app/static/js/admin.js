@@ -124,21 +124,29 @@ if (editor) {
   function element(tag, text, className) {
     const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node;
   }
-  let messageRequest = 0;
+  let messageRequest = 0, mailFilter = "all";
   async function loadMessages() {
     const sequence = ++messageRequest;
     const list = document.getElementById("message-list");
     list.textContent = "Loading messages…";
     try {
-      const messages = await api(`/admin/api/messages?offset=${offset}`);
+      const filterQuery = mailFilter === "all" ? "" : `&is_read=${mailFilter === "read"}`;
+      const messages = await api(`/admin/api/messages?offset=${offset}${filterQuery}`);
       if (sequence !== messageRequest) return;
+      if (!messages.length && offset > 0) {
+        offset = Math.max(0, offset - 50);
+        return loadMessages();
+      }
       list.replaceChildren();
-      if (!messages.length) list.append(element("p", "No messages on this page. New contact submissions will appear here.", "admin-panel"));
+      if (!messages.length) list.append(element("p", mailFilter === "all" ? "No messages yet. New contact submissions will appear here." : `No ${mailFilter} messages.`, "admin-panel"));
       messages.forEach((message) => {
-        const card = element("article", "", `message-card${message.is_read ? " is-read" : ""}`);
-        const header = element("header");
+        const card = element("details", "", `message-card${message.is_read ? " is-read" : ""}`);
+        const header = element("summary", "", "message-summary");
         const timestamp = element("time", new Date(message.created_at).toLocaleString()); timestamp.dateTime = message.created_at;
-        header.append(element("h3", message.name), timestamp);
+        const readState = element("span", message.is_read ? "Read" : "Unread", "message-read-state");
+        const preview = element("span", message.message.replace(/\s+/g, " "), "message-preview");
+        header.append(element("span", message.name, "message-sender"), readState, preview, timestamp);
+        const details = element("div", "", "message-details");
         const meta = element("div", "", "message-meta");
         const email = element("a", message.email); email.href = `mailto:${message.email}`; meta.append(email);
         if (message.phone) meta.append(element("span", message.phone));
@@ -150,24 +158,36 @@ if (editor) {
           toggle.disabled = true;
           try {
             await api(`/admin/api/messages/${message.id}`, json("PATCH", {is_read: !message.is_read}));
-            message.is_read = !message.is_read; card.classList.toggle("is-read", !!message.is_read); toggle.textContent = message.is_read ? "Mark unread" : "Mark read";
+            message.is_read = !message.is_read; readState.textContent = message.is_read ? "Read" : "Unread"; card.classList.toggle("is-read", !!message.is_read); toggle.textContent = message.is_read ? "Mark unread" : "Mark read";
+            if (mailFilter !== "all") await loadMessages();
           } catch (error) { status.textContent = error.message; }
           finally { toggle.disabled = false; }
         });
-        footer.append(toggle); card.append(header, meta, element("p", message.message, "message-body"), footer); list.append(card);
+        footer.append(toggle); details.append(meta, element("p", message.message, "message-body"), footer); card.append(header, details); list.append(card);
       });
       document.getElementById("previous-page").disabled = offset === 0;
       document.getElementById("next-page").disabled = messages.length < 50;
       document.getElementById("message-page").textContent = `Page ${offset / 50 + 1}`;
     } catch (error) { list.textContent = error.message; }
   }
-  for (const name of ["editor", "messages"]) document.getElementById(`${name}-tab`).addEventListener("click", () => {
-    for (const tab of ["editor", "messages"]) {
+  for (const name of ["editor", "messages", "newsletter"]) document.getElementById(`${name}-tab`).addEventListener("click", () => {
+    for (const tab of ["editor", "messages", "newsletter"]) {
       document.getElementById(`${tab}-section`).hidden = tab !== name;
       document.getElementById(`${tab}-tab`).setAttribute("aria-pressed", String(tab === name));
     }
     status.textContent = "";
     if (name === "messages") loadMessages();
+    if (name === "newsletter") loadNewsletter();
+  });
+  document.querySelectorAll("[data-mail-filter]").forEach((button) => {
+    button.addEventListener("click", () => {
+      mailFilter = button.dataset.mailFilter;
+      offset = 0;
+      document.querySelectorAll("[data-mail-filter]").forEach((filter) => {
+        filter.setAttribute("aria-pressed", String(filter.dataset.mailFilter === mailFilter));
+      });
+      loadMessages();
+    });
   });
   document.getElementById("refresh-messages").addEventListener("click", loadMessages);
   document.getElementById("previous-page").addEventListener("click", () => { offset = Math.max(0, offset - 50); loadMessages(); });
@@ -176,5 +196,69 @@ if (editor) {
     if (dirty && !confirm("Sign out and discard unsaved changes?")) return;
     try { await api("/admin/logout", {method: "POST"}); dirty = false; location.href = "/admin/login"; }
     catch (error) { status.textContent = error.message; }
+  });
+}
+
+let newsletterBusy = false;
+let campaignId = null;
+let subscriberCount = 0;
+function campaignProgress(job) {
+  return `${job.sent} accepted · ${job.pending} remaining · ${job.failed} failed · ${job.sending} unconfirmed · ${job.skipped} unsubscribed`;
+}
+async function loadNewsletter() {
+  const status = document.getElementById("admin-status");
+  try {
+    const data = await api("/admin/api/newsletter");
+    subscriberCount = data.subscribers;
+    document.getElementById("subscriber-count").textContent = `${subscriberCount} active subscriber${subscriberCount === 1 ? "" : "s"}`;
+    const history = document.getElementById("newsletter-history");
+    history.replaceChildren();
+    for (const job of data.campaigns) {
+      const card = document.createElement("article"); card.className = "admin-panel";
+      const title = document.createElement("h3"); title.textContent = job.subject;
+      const progress = document.createElement("p"); progress.textContent = `${new Date(job.created_at).toLocaleString()} — ${campaignProgress(job)}`;
+      card.append(title, progress);
+      if (job.pending) {
+        const button = document.createElement("button"); button.className = "secondary-button"; button.textContent = "Continue sending"; button.disabled = newsletterBusy;
+        button.addEventListener("click", () => sendNewsletter(job.id)); card.append(button);
+      }
+      history.append(card);
+    }
+    if (!data.campaigns.length) history.textContent = "No emails sent yet.";
+  } catch (error) { status.textContent = error.message; }
+}
+async function sendNewsletter(id) {
+  if (newsletterBusy) return;
+  newsletterBusy = true;
+  const status = document.getElementById("admin-status");
+  document.querySelector('#newsletter-compose button').disabled = true;
+  try {
+    let job;
+    do {
+      job = await api(`/admin/api/newsletter/${id}/send`, {method: "POST"});
+      status.textContent = campaignProgress(job);
+      if (job.last_failed) { status.textContent += ". Sending paused after a failure. Check email settings before continuing."; break; }
+    } while (job.pending > 0);
+    if (!job.pending) status.textContent = `Sending finished. ${campaignProgress(job)}`;
+  } catch (error) { status.textContent = `${error.message} Refresh to review delivery progress before continuing.`; }
+  finally { newsletterBusy = false; document.querySelector('#newsletter-compose button').disabled = false; await loadNewsletter(); }
+}
+const composer = document.getElementById("newsletter-compose");
+if (composer) {
+  document.getElementById("refresh-newsletter").addEventListener("click", loadNewsletter);
+  composer.addEventListener("input", () => { campaignId = null; });
+  window.addEventListener("beforeunload", (event) => { if (newsletterBusy) { event.preventDefault(); event.returnValue = ""; } });
+  composer.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    if (newsletterBusy) return;
+    if (!confirm(`Send “${composer.elements.subject.value}” to all active subscribers (${subscriberCount} at last refresh)?`)) return;
+    const button = composer.querySelector("button"); button.disabled = true;
+    campaignId ||= crypto.randomUUID();
+    try {
+      const job = await api("/admin/api/newsletter", json("POST", {id: campaignId, subject: composer.elements.subject.value, body: composer.elements.body.value}));
+      composer.reset(); campaignId = null;
+      await sendNewsletter(job.id);
+    } catch (error) { document.getElementById("admin-status").textContent = error.message; }
+    finally { button.disabled = false; }
   });
 }

@@ -67,3 +67,21 @@ if (headerLogo) {
     if (!headerLogo.contains(event.target)) { clearTimeout(timer); count = 0; }
   });
 }
+
+const signupForm = document.getElementById("newsletter-signup");
+if (signupForm) signupForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = signupForm.querySelector('[type="submit"]');
+  if (button.disabled) return;
+  button.disabled = true;
+  const status = document.getElementById("signup-status");
+  status.textContent = "Signing up…";
+  try {
+    const response = await fetch("/api/newsletter/subscribe", {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify({email: signupForm.elements.email.value})});
+    const data = await response.json();
+    if (!response.ok) throw new Error(typeof data.detail === "string" ? data.detail : "Please enter a valid email address.");
+    status.textContent = data.message;
+    signupForm.reset();
+  } catch (error) { status.textContent = error instanceof TypeError ? "Could not save your signup. Please try again." : error.message; }
+  finally { button.disabled = false; }
+});
